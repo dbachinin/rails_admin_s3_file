@@ -48,7 +48,7 @@ module RailsAdmin
           end
 
           def s3_bucket
-            @s3_bucket ||= Aws::S3::Resource.new.bucket(ENV['FOG_DIRECTORY'])
+            @s3_bucket ||= Aws::S3::Resource.new.bucket(ENV['FOG_DIRECTORY'] || ENV['AWS_BUCKET'])
           end
 
           def presigned_post
