@@ -43,6 +43,14 @@ module RailsAdmin
             'photo'
           end
 
+          register_instance_option(:upload_model_class) do
+            bindings[:abstract_model].model
+          end
+
+          register_instance_option(:upload_expires) do
+            nil
+          end
+
           def upload_key
             @upload_key ||= "#{upload_path}/#{SecureRandom.uuid}.#{upload_extension}"
           end
@@ -53,10 +61,10 @@ module RailsAdmin
 
           def presigned_post
             s3_bucket.presigned_post(
-              key: upload_key,
+              { key: upload_key,
               acl: upload_acl,
               content_type_starts_with: upload_content_type,
-              expires: ::Time.now + 1.hour
+              expires: upload_expires }.compact
             )
           end
         end

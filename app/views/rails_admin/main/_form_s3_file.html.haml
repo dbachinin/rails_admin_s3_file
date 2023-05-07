@@ -24,6 +24,7 @@
           url: url,
           type: 'post',
           data: data,
+          crossDomain: true,
           cache: false,
           processData: false,
           contentType: false,
@@ -42,17 +43,30 @@
         $('button.upload-content', #{field.name}Uploader.uploaderWrapper).hide();
       },
       toggleSuccessUpload: function(url){
-        $('input.uploaded-file-url', #{field.name}Uploader.uploaderWrapper).val(url);
+        var static_url = "https://#{ENV['AWS_BUCKET']}.s3.#{ENV['AWS_REGION']}.amazonaws.com/#{field.upload_key}"
+
+        $('input.uploaded-file-url', #{field.name}Uploader.uploaderWrapper).val(url || static_url);
         $('.progress', #{field.name}Uploader.uploaderWrapper).hide();
-        var video = $('<video />', {
-          src: url,
-          type: 'video/mp4',
-          width: 200,
-          controls: true
-        });
-        $('input[type=file]', #{field.name}Uploader.uploaderWrapper).remove();
-        video.appendTo($('.success', #{field.name}Uploader.uploaderWrapper));
-        $('.success', #{field.name}Uploader.uploaderWrapper).show();
+
+        if ("#{field.upload_content_type}".includes('image')){
+          var img = $('<img />', {
+            src: url || static_url,
+            width: 200
+          });
+          $('input[type=file]', #{field.name}Uploader.uploaderWrapper).remove();
+          img.appendTo($('.success', #{field.name}Uploader.uploaderWrapper));
+          $('.success', #{field.name}Uploader.uploaderWrapper).show();
+        } else if ("#{field.upload_content_type}".includes('video')){
+          var video = $('<video />', {
+            src: url,
+            type: 'video/mp4',
+            width: 200,
+            controls: true
+          });
+          $('input[type=file]', #{field.name}Uploader.uploaderWrapper).remove();
+          video.appendTo($('.success', #{field.name}Uploader.uploaderWrapper));
+          $('.success', #{field.name}Uploader.uploaderWrapper).show();
+        }
       },
       customXhr: function() {
         var xhr = new window.XMLHttpRequest();
@@ -82,9 +96,10 @@
 
 .s3-uploader-wrapper{ class: "s3-uploader-#{field.name}" }
   .s3-fields
+    =image_tag field.value
     - signed_post.fields.each_key do |key|
       %input{ type: 'hidden', name: key, value: signed_post.fields[key] }
-    %input{ type: 'hidden', name: 'Content-Type', value: 'video/mp4' }
+    %input{ type: 'hidden', name: 'Content-Type', value: field.upload_content_type }
 
   .file-selector
     %label Choose the asset to upload
@@ -92,7 +107,7 @@
     .progress{ style: 'display:none' }
       .progress-bar.progress-bar-info{ role: 'progressbar', style:'width:50%' }
         Uploading ... (please wait)
-    %p.help Assets will be uploaded to s3
+    %p.help Assets will be uploaded to s3 (Now this is #{field.value})
     .success{ style: 'display:none' }
 
   = form.send :hidden_field, field.method_name, field.html_attributes.merge(class: 'uploaded-file-url')
